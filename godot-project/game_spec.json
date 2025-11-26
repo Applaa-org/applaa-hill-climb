@@ -1,0 +1,86 @@
+{
+  "game": {
+    "name": "Hill Climb Racing",
+    "type": "2D",
+    "genre": "racing",
+    "description": "Physics-based hill climbing racing game with multiple vehicles and upgrades"
+  },
+  "settings": {
+    "window": {"width": 1024, "height": 600},
+    "physics": {"gravity": 980}
+  },
+  "player": {
+    "name": "Player",
+    "health": 100,
+    "speed": 200,
+    "abilities": ["accelerate", "brake", "tilt"]
+  },
+  "entities": {
+    "vehicles": [
+      {
+        "name": "Car",
+        "speed": 200,
+        "fuel": 100,
+        "cost": 0
+      },
+      {
+        "name": "Jeep",
+        "speed": 180,
+        "fuel": 120,
+        "cost": 500
+      },
+      {
+        "name": "Bike",
+        "speed": 250,
+        "fuel": 80,
+        "cost": 300
+      },
+      {
+        "name": "Truck",
+        "speed": 150,
+        "fuel": 150,
+        "cost": 1000
+      }
+    ],
+    "collectibles": [
+      {
+        "name": "Coin",
+        "value": 10
+      },
+      {
+        "name": "Fuel",
+        "value": 30
+      }
+    ]
+  },
+  "levels": [
+    {
+      "name": "Forest",
+      "gravity": 980,
+      "theme": "green"
+    },
+    {
+      "name": "Snow",
+      "gravity": 800,
+      "theme": "white"
+    },
+    {
+      "name": "Desert",
+      "gravity": 1000,
+      "theme": "yellow"
+    },
+    {
+      "name": "Moon",
+      "gravity": 200,
+      "theme": "gray"
+    }
+  ],
+  "logic": {
+    "winCondition": "distance",
+    "loseCondition": "fuel_zero | crash",
+    "scoring": {
+      "pointsPerCoin": 10,
+      "pointsPerDistance": 1
+    }
+  }
+}

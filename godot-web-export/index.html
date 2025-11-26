@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hill Climb Racing - HTML5 Preview</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #87CEEB, #98D982);
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        
+        #gameCanvas {
+            display: block;
+            margin: 0 auto;
+            border: 2px solid #333;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .hud {
+            position: absolute;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        #distance {
+            top: 20px;
+            left: 20px;
+        }
+        
+        #coins {
+            top: 50px;
+            left: 20px;
+        }
+        
+        #fuel {
+            top: 80px;
+            left: 20px;
+        }
+        
+        #speed {
+            top: 20px;
+            right: 20px;
+        }
+        
+        .mobile-controls {
+            position: absolute;
+            bottom: 20px;
+            pointer-events: all;
+        }
+        
+        .control-btn {
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.3);
+            border: 3px solid white;
+            border-radius: 50%;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            margin: 5px;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        .control-btn:active {
+            background: rgba(255,255,255,0.5);
+        }
+        
+        #leftControls {
+            left: 20px;
+        }
+        
+        #rightControls {
+            right: 20px;
+        }
+        
+        #menu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            color: white;
+            pointer-events: all;
+        }
+        
+        .menu-btn {
+            display: block;
+            width: 200px;
+            margin: 10px auto;
+            padding: 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        
+        .menu-btn:hover {
+            background: #45a049;
+        }
+        
+        #gameOver {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .control-btn {
+                width: 60px;
+                height: 60px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="ui">
+        <div id="distance" class="hud">Distance: 0m</div>
+        <div id="coins" class="hud">Coins: 0</div>
+        <div id="fuel" class="hud">Fuel: 100%</div>
+        <div id="speed" class="hud">Speed: 0</div>
+        
+        <div id="leftControls" class="mobile-controls">
+            <button class="control-btn" id="leftBtn">&lt;</button>
+            <button class="control-btn" id="brakeBtn">BRAKE</button>
+        </div>
+        
+        <div id="rightControls" class="mobile-controls">
+            <button class="control-btn" id="rightBtn">&gt;</button>
+            <button class="control-btn" id="gasBtn">GAS</button>
+        </div>
+        
+        <div id="menu">
+            <h1>Hill Climb Racing</h1>
+            <button class="menu-btn" onclick="startGame()">Play</button>
+            <button class="menu-btn" onclick="selectVehicle()">Select Vehicle</button>
+            <button class="menu-btn" onclick="showUpgrades()">Upgrades</button>
+            <button class="menu-btn" onclick="closeGame()">Close</button>
+        </div>
+        
+        <div id="gameOver" class="menu">
+            <h2>Game Over!</h2>
+            <p id="finalDistance">Distance: 0m</p>
+            <p id="finalCoins">Coins: 0</p>
+            <button class="menu-btn" onclick="restartGame()">Retry</button>
+            <button class="menu-btn" onclick="showMenu()">Main Menu</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size
+        function resizeCanvas() {
+            canvas.width = Math.min(window.innerWidth, 1024);
+            canvas.height = Math.min(window.innerHeight, 600);
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Game state
+        let gameState = 'menu';
+        let vehicle = {
+            x: 200,
+            y: 300,
+            vx: 0,
+            vy: 0,
+            angle: 0,
+            fuel: 100,
+            maxFuel: 100
+        };
+        
+        let terrain = [];
+        let coins = [];
+        let obstacles = [];
+        let fuelCans = [];
+        let camera = { x: 0, y: 0 };
+        let distance = 0;
+        let totalCoins = 0;
+        let keys = {};
+        
+        // Generate terrain
+        function generateTerrain() {
+            terrain = [];
+            for (let x = 0; x < 3000; x += 10) {
+                let height = 300 + Math.sin(x * 0.01) * 100 + Math.sin(x * 0.005) * 50;
+                terrain.push({ x, y: height });
+            }
+        }
+        
+        // Generate objects
+        function generateObjects() {
+            coins = [];
+            obstacles = [];
+            fuelCans = [];
+            
+            for (let i = 0; i < 50; i++) {
+                let x = 400 + i * 200 + Math.random() * 100;
+                let terrainY = getTerrainHeight(x);
+                
+                if (Math.random() < 0.3) {
+                    coins.push({ x, y: terrainY - 50, collected: false });
+                }
+                
+                if (Math.random() < 0.1) {
+                    obstacles.push({ x, y: terrainY - 20, width: 40, height: 40 });
+                }
+                
+                if (Math.random() < 0.05) {
+                    fuelCans.push({ x, y: terrainY - 50, collected: false });
+                }
+            }
+        }
+        
+        function getTerrainHeight(x) {
+            for (let i = 0; i < terrain.length - 1; i++) {
+                if (x >= terrain[i].x && x <= terrain[i + 1].x) {
+                    let t = (x - terrain[i].x) / (terrain[i + 1].x - terrain[i].x);
+                    return terrain[i].y + t * (terrain[i + 1].y - terrain[i].y);
+                }
+            }
+            return 300;
+        }
+        
+        // Input handling
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+        
+        // Mobile controls
+        document.getElementById('gasBtn').addEventListener('touchstart', () => keys['ArrowUp'] = true);
+        document.getElementById('gasBtn').addEventListener('touchend', () => keys['ArrowUp'] = false);
+        document.getElementById('brakeBtn').addEventListener('touchstart', () => keys['ArrowDown'] = true);
+        document.getElementById('brakeBtn').addEventListener('touchend', () => keys['ArrowDown'] = false);
+        document.getElementById('leftBtn').addEventListener('touchstart', () => keys['ArrowLeft'] = true);
+        document.getElementById('leftBtn').addEventListener('touchend', () => keys['ArrowLeft'] = false);
+        document.getElementById('rightBtn').addEventListener('touchstart', () => keys['ArrowRight'] = true);
+        document.getElementById('rightBtn').addEventListener('touchend', () => keys['ArrowRight'] = false);
+        
+        // Mouse controls for desktop
+        document.getElementById('gasBtn').addEventListener('mousedown', () => keys['ArrowUp'] = true);
+        document.getElementById('gasBtn').addEventListener('mouseup', () => keys['ArrowUp'] = false);
+        document.getElementById('brakeBtn').addEventListener('mousedown', () => keys['ArrowDown'] = true);
+        document.getElementById('brakeBtn').addEventListener('mouseup', () => keys['ArrowDown'] = false);
+        document.getElementById('leftBtn').addEventListener('mousedown', () => keys['ArrowLeft'] = true);
+        document.getElementById('leftBtn').addEventListener('mouseup', () => keys['ArrowLeft'] = false);
+        document.getElementById('rightBtn').addEventListener('mousedown', () => keys['ArrowRight'] = true);
+        document.getElementById('rightBtn').addEventListener('mouseup', () => keys['ArrowRight'] = false);
+        
+        // Update physics
+        function update(deltaTime) {
+            if (gameState !== 'playing') return;
+            
+            // Input
+            if (keys['ArrowUp'] && vehicle.fuel > 0) {
+                vehicle.vx += 150 * deltaTime;
+                vehicle.fuel -= 10 * deltaTime;
+            }
+            if (keys['ArrowDown']) {
+                vehicle.vx -= 200 * deltaTime;
+            }
+            if (keys['ArrowLeft']) {
+                vehicle.angle -= 2 * deltaTime;
+            }
+            if (keys['ArrowRight']) {
+                vehicle.angle += 2 * deltaTime;
+            }
+            
+            // Physics
+            vehicle.vy += 500 * deltaTime; // Gravity
+            vehicle.vx *= 0.98; // Friction
+            
+            // Update position
+            vehicle.x += vehicle.vx * deltaTime;
+            vehicle.y += vehicle.vy * deltaTime;
+            
+            // Terrain collision
+            let terrainY = getTerrainHeight(vehicle.x);
+            if (vehicle.y > terrainY - 20) {
+                vehicle.y = terrainY - 20;
+                vehicle.vy = 0;
+                vehicle.angle = Math.atan2(terrainY - getTerrainHeight(vehicle.x + 10), 10);
+            }
+            
+            // Collect coins
+            coins.forEach(coin => {
+                if (!coin.collected && Math.abs(vehicle.x - coin.x) < 30 && Math.abs(vehicle.y - coin.y) < 30) {
+                    coin.collected = true;
+                    totalCoins += 10;
+                }
+            });
+            
+            // Collect fuel
+            fuelCans.forEach(fuel => {
+                if (!fuel.collected && Math.abs(vehicle.x - fuel.x) < 30 && Math.abs(vehicle.y - fuel.y) < 30) {
+                    fuel.collected = true;
+                    vehicle.fuel = Math.min(vehicle.fuel + 30, vehicle.maxFuel);
+                }
+            });
+            
+            // Check obstacles
+            obstacles.forEach(obstacle => {
+                if (Math.abs(vehicle.x - obstacle.x) < 30 && Math.abs(vehicle.y - obstacle.y) < 30) {
+                    gameOver();
+                }
+            });
+            
+            // Update camera
+            camera.x = vehicle.x - 200;
+            
+            // Update distance
+            distance = Math.max(distance, vehicle.x / 100);
+            
+            // Check game over
+            if (vehicle.fuel <= 0 || Math.abs(vehicle.angle) > 1.5) {
+                gameOver();
+            }
+            
+            // Update HUD
+            document.getElementById('distance').textContent = `Distance: ${distance.toFixed(1)}m`;
+            document.getElementById('coins').textContent = `Coins: ${totalCoins}`;
+            document.getElementById('fuel').textContent = `Fuel: ${Math.max(0, vehicle.fuel).toFixed(0)}%`;
+            document.getElementById('speed').textContent = `Speed: ${Math.abs(vehicle.vx).toFixed(0)}`;
+        }
+        
+        // Render
+        function render() {
+            // Clear canvas
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Save context
+            ctx.save();
+            
+            // Apply camera transform
+            ctx.translate(-camera.x, -camera.y);
+            
+            // Draw terrain
+            ctx.fillStyle = '#8B4513';
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height);
+            terrain.forEach(point => {
+                ctx.lineTo(point.x, point.y);
+            });
+            ctx.lineTo(terrain[terrain.length - 1].x, canvas.height);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Draw coins
+            ctx.fillStyle = '#FFD700';
+            coins.forEach(coin => {
+                if (!coin.collected) {
+                    ctx.beginPath();
+                    ctx.arc(coin.x, coin.y, 15, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+            
+            // Draw fuel cans
+            ctx.fillStyle = '#FF0000';
+            fuelCans.forEach(fuel => {
+                if (!fuel.collected) {
+                    ctx.fillRect(fuel.x - 15, fuel.y - 20, 30, 40);
+                }
+            });
+            
+            // Draw obstacles
+            ctx.fillStyle = '#666666';
+            obstacles.forEach(obstacle => {
+                ctx.fillRect(obstacle.x - obstacle.width/2, obstacle.y - obstacle.height/2, obstacle.width, obstacle.height);
+            });
+            
+            // Draw vehicle
+            ctx.save();
+            ctx.translate(vehicle.x, vehicle.y);
+            ctx.rotate(vehicle.angle);
+            ctx.fillStyle = '#0000FF';
+            ctx.fillRect(-20, -10, 40, 20);
+            ctx.fillStyle = '#333333';
+            ctx.fillRect(-15, 5, 10, 10);
+            ctx.fillRect(5, 5, 10, 10);
+            ctx.restore();
+            
+            // Restore context
+            ctx.restore();
+        }
+        
+        // Game loop
+        let lastTime = 0;
+        function gameLoop(timestamp) {
+            let deltaTime = (timestamp - lastTime) / 1000;
+            lastTime = timestamp;
+            
+            update(deltaTime);
+            render();
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Game control functions
+        function startGame() {
+            gameState = 'playing';
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('gameOver').style.display = 'none';
+            resetGame();
+        }
+        
+        function resetGame() {
+            vehicle = {
+                x: 200,
+                y: 300,
+                vx: 0,
+                vy: 0,
+                angle: 0,
+                fuel: 100,
+                maxFuel: 100
+            };
+            camera = { x: 0, y: 0 };
+            distance = 0;
+            totalCoins = 0;
+            generateTerrain();
+            generateObjects();
+        }
+        
+        function gameOver() {
+            gameState = 'gameOver';
+            document.getElementById('gameOver').style.display = 'block';
+            document.getElementById('finalDistance').textContent = `Distance: ${distance.toFixed(1)}m`;
+            document.getElementById('finalCoins').textContent = `Coins: ${totalCoins}`;
+        }
+        
+        function restartGame() {
+            startGame();
+        }
+        
+        function showMenu() {
+            gameState = 'menu';
+            document.getElementById('menu').style.display = 'block';
+            document.getElementById('gameOver').style.display = 'none';
+        }
+        
+        function selectVehicle() {
+            alert('Vehicle selection - Full version available in Godot export');
+        }
+        
+        function showUpgrades() {
+            alert('Upgrades - Full version available in Godot export');
+        }
+        
+        function closeGame() {
+            window.close();
+        }
+        
+        // Initialize game
+        generateTerrain();
+        generateObjects();
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
