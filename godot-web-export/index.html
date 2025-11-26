@@ -56,6 +56,19 @@
             right: 20px;
         }
         
+        #controls {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            text-align: center;
+            font-size: 14px;
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
         .mobile-controls {
             position: absolute;
             bottom: 20px;
@@ -132,6 +145,11 @@
                 height: 60px;
                 font-size: 16px;
             }
+            
+            #controls {
+                font-size: 12px;
+                padding: 5px;
+            }
         }
     </style>
 </head>
@@ -139,6 +157,12 @@
     <canvas id="gameCanvas"></canvas>
     
     <div id="ui">
+        <div id="controls" class="hud">
+            <strong>Controls:</strong><br>
+            WASD or Arrow Keys | Mobile: On-screen buttons<br>
+            W/↑ = Gas | S/↓ = Brake | A/← = Tilt Left | D/→ = Tilt Right
+        </div>
+        
         <div id="distance" class="hud">Distance: 0m</div>
         <div id="coins" class="hud">Coins: 0</div>
         <div id="fuel" class="hud">Fuel: 100%</div>
@@ -156,6 +180,7 @@
         
         <div id="menu">
             <h1>Hill Climb Racing</h1>
+            <p><strong>Controls:</strong> WASD or Arrow Keys</p>
             <button class="menu-btn" onclick="startGame()">Play</button>
             <button class="menu-btn" onclick="selectVehicle()">Select Vehicle</button>
             <button class="menu-btn" onclick="showUpgrades()">Upgrades</button>
@@ -247,13 +272,15 @@
             return 300;
         }
         
-        // Input handling
+        // Input handling - WASD and Arrow keys
         document.addEventListener('keydown', (e) => {
-            keys[e.key] = true;
+            keys[e.key.toLowerCase()] = true;
+            keys[e.key] = true; // Keep arrow keys as is
         });
         
         document.addEventListener('keyup', (e) => {
-            keys[e.key] = false;
+            keys[e.key.toLowerCase()] = false;
+            keys[e.key] = false; // Keep arrow keys as is
         });
         
         // Mobile controls - Fixed with proper event handling
@@ -266,80 +293,96 @@
             // Gas button
             gasBtn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
-                keys['ArrowUp'] = true;
+                keys['w'] = true;
+                keys['arrowup'] = true;
                 gasBtn.classList.add('active');
             });
             gasBtn.addEventListener('touchend', (e) => {
                 e.preventDefault();
-                keys['ArrowUp'] = false;
+                keys['w'] = false;
+                keys['arrowup'] = false;
                 gasBtn.classList.remove('active');
             });
             gasBtn.addEventListener('mousedown', () => {
-                keys['ArrowUp'] = true;
+                keys['w'] = true;
+                keys['arrowup'] = true;
                 gasBtn.classList.add('active');
             });
             gasBtn.addEventListener('mouseup', () => {
-                keys['ArrowUp'] = false;
+                keys['w'] = false;
+                keys['arrowup'] = false;
                 gasBtn.classList.remove('active');
             });
             
             // Brake button
             brakeBtn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
-                keys['ArrowDown'] = true;
+                keys['s'] = true;
+                keys['arrowdown'] = true;
                 brakeBtn.classList.add('active');
             });
             brakeBtn.addEventListener('touchend', (e) => {
                 e.preventDefault();
-                keys['ArrowDown'] = false;
+                keys['s'] = false;
+                keys['arrowdown'] = false;
                 brakeBtn.classList.remove('active');
             });
             brakeBtn.addEventListener('mousedown', () => {
-                keys['ArrowDown'] = true;
+                keys['s'] = true;
+                keys['arrowdown'] = true;
                 brakeBtn.classList.add('active');
             });
             brakeBtn.addEventListener('mouseup', () => {
-                keys['ArrowDown'] = false;
+                keys['s'] = false;
+                keys['arrowdown'] = false;
                 brakeBtn.classList.remove('active');
             });
             
             // Left button
             leftBtn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
-                keys['ArrowLeft'] = true;
+                keys['a'] = true;
+                keys['arrowleft'] = true;
                 leftBtn.classList.add('active');
             });
             leftBtn.addEventListener('touchend', (e) => {
                 e.preventDefault();
-                keys['ArrowLeft'] = false;
+                keys['a'] = false;
+                keys['arrowleft'] = false;
                 leftBtn.classList.remove('active');
             });
             leftBtn.addEventListener('mousedown', () => {
-                keys['ArrowLeft'] = true;
+                keys['a'] = true;
+                keys['arrowleft'] = true;
                 leftBtn.classList.add('active');
             });
             leftBtn.addEventListener('mouseup', () => {
-                keys['ArrowLeft'] = false;
+                keys['a'] = false;
+                keys['arrowleft'] = false;
                 leftBtn.classList.remove('active');
             });
             
             // Right button
             rightBtn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
-                keys['ArrowRight'] = true;
+                keys['d'] = true;
+                keys['arrowright'] = true;
                 rightBtn.classList.add('active');
             });
             rightBtn.addEventListener('touchend', (e) => {
                 e.preventDefault();
-                keys['ArrowRight'] = false;
+                keys['d'] = false;
+                keys['arrowright'] = false;
                 rightBtn.classList.remove('active');
             });
             rightBtn.addEventListener('mousedown', () => {
-                keys['ArrowRight'] = true;
+                keys['d'] = true;
+                keys['arrowright'] = true;
                 rightBtn.classList.add('active');
             });
             rightBtn.addEventListener('mouseup', () => {
-                keys['ArrowRight'] = false;
+                keys['d'] = false;
+                keys['arrowright'] = false;
                 rightBtn.classList.remove('active');
             });
         }
@@ -351,18 +394,18 @@
         function update(deltaTime) {
             if (gameState !== 'playing') return;
             
-            // Input
-            if (keys['ArrowUp'] && vehicle.fuel > 0) {
+            // Input - Check both WASD and Arrow keys
+            if ((keys['w'] || keys['arrowup']) && vehicle.fuel > 0) {
                 vehicle.vx += 150 * deltaTime;
                 vehicle.fuel -= 10 * deltaTime;
             }
-            if (keys['ArrowDown']) {
+            if (keys['s'] || keys['arrowdown']) {
                 vehicle.vx -= 200 * deltaTime;
             }
-            if (keys['ArrowLeft']) {
+            if (keys['a'] || keys['arrowleft']) {
                 vehicle.angle -= 2 * deltaTime;
             }
-            if (keys['ArrowRight']) {
+            if (keys['d'] || keys['arrowright']) {
                 vehicle.angle += 2 * deltaTime;
             }
             
@@ -502,6 +545,7 @@
             gameState = 'playing';
             document.getElementById('menu').style.display = 'none';
             document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('controls').style.display = 'block';
             resetGame();
         }
         
@@ -537,6 +581,7 @@
             gameState = 'menu';
             document.getElementById('menu').style.display = 'block';
             document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('controls').style.display = 'none';
         }
         
         function selectVehicle() {

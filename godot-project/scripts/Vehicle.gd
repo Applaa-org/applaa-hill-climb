@@ -55,22 +55,25 @@ func _physics_process(delta: float):
 			fuel = 0
 
 func handle_input(delta: float):
-	# Desktop controls
-	if Input.is_action_pressed("ui_up"):
+	# Acceleration controls (W or Arrow Up)
+	if Input.is_action_pressed("ui_up") or Input.is_key_pressed(KEY_W):
 		accelerating = true
 		velocity.x += ACCELERATION * delta
-	elif Input.is_action_pressed("ui_down"):
+	else:
+		accelerating = false
+	
+	# Brake controls (S or Arrow Down)
+	if Input.is_action_pressed("ui_down") or Input.is_key_pressed(KEY_S):
 		braking = true
 		velocity.x -= BRAKE_FORCE * delta
 	else:
-		accelerating = false
 		braking = false
 	
-	# Rotation control (when in air or moving)
-	if Input.is_action_pressed("ui_left"):
+	# Rotation control (A/Arrow Left or D/Arrow Right)
+	if Input.is_action_pressed("ui_left") or Input.is_key_pressed(KEY_A):
 		tilting = -1
 		rotation -= ROTATION_SPEED * delta
-	elif Input.is_action_pressed("ui_right"):
+	elif Input.is_action_pressed("ui_right") or Input.is_key_pressed(KEY_D):
 		tilting = 1
 		rotation += ROTATION_SPEED * delta
 	else:
