@@ -75,9 +75,12 @@
             cursor: pointer;
             user-select: none;
             -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
         }
         
-        .control-btn:active {
+        .control-btn:active,
+        .control-btn.active {
             background: rgba(255,255,255,0.5);
         }
         
@@ -253,25 +256,96 @@
             keys[e.key] = false;
         });
         
-        // Mobile controls
-        document.getElementById('gasBtn').addEventListener('touchstart', () => keys['ArrowUp'] = true);
-        document.getElementById('gasBtn').addEventListener('touchend', () => keys['ArrowUp'] = false);
-        document.getElementById('brakeBtn').addEventListener('touchstart', () => keys['ArrowDown'] = true);
-        document.getElementById('brakeBtn').addEventListener('touchend', () => keys['ArrowDown'] = false);
-        document.getElementById('leftBtn').addEventListener('touchstart', () => keys['ArrowLeft'] = true);
-        document.getElementById('leftBtn').addEventListener('touchend', () => keys['ArrowLeft'] = false);
-        document.getElementById('rightBtn').addEventListener('touchstart', () => keys['ArrowRight'] = true);
-        document.getElementById('rightBtn').addEventListener('touchend', () => keys['ArrowRight'] = false);
+        // Mobile controls - Fixed with proper event handling
+        function setupMobileControls() {
+            const gasBtn = document.getElementById('gasBtn');
+            const brakeBtn = document.getElementById('brakeBtn');
+            const leftBtn = document.getElementById('leftBtn');
+            const rightBtn = document.getElementById('rightBtn');
+            
+            // Gas button
+            gasBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                keys['ArrowUp'] = true;
+                gasBtn.classList.add('active');
+            });
+            gasBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                keys['ArrowUp'] = false;
+                gasBtn.classList.remove('active');
+            });
+            gasBtn.addEventListener('mousedown', () => {
+                keys['ArrowUp'] = true;
+                gasBtn.classList.add('active');
+            });
+            gasBtn.addEventListener('mouseup', () => {
+                keys['ArrowUp'] = false;
+                gasBtn.classList.remove('active');
+            });
+            
+            // Brake button
+            brakeBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                keys['ArrowDown'] = true;
+                brakeBtn.classList.add('active');
+            });
+            brakeBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                keys['ArrowDown'] = false;
+                brakeBtn.classList.remove('active');
+            });
+            brakeBtn.addEventListener('mousedown', () => {
+                keys['ArrowDown'] = true;
+                brakeBtn.classList.add('active');
+            });
+            brakeBtn.addEventListener('mouseup', () => {
+                keys['ArrowDown'] = false;
+                brakeBtn.classList.remove('active');
+            });
+            
+            // Left button
+            leftBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                keys['ArrowLeft'] = true;
+                leftBtn.classList.add('active');
+            });
+            leftBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                keys['ArrowLeft'] = false;
+                leftBtn.classList.remove('active');
+            });
+            leftBtn.addEventListener('mousedown', () => {
+                keys['ArrowLeft'] = true;
+                leftBtn.classList.add('active');
+            });
+            leftBtn.addEventListener('mouseup', () => {
+                keys['ArrowLeft'] = false;
+                leftBtn.classList.remove('active');
+            });
+            
+            // Right button
+            rightBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                keys['ArrowRight'] = true;
+                rightBtn.classList.add('active');
+            });
+            rightBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                keys['ArrowRight'] = false;
+                rightBtn.classList.remove('active');
+            });
+            rightBtn.addEventListener('mousedown', () => {
+                keys['ArrowRight'] = true;
+                rightBtn.classList.add('active');
+            });
+            rightBtn.addEventListener('mouseup', () => {
+                keys['ArrowRight'] = false;
+                rightBtn.classList.remove('active');
+            });
+        }
         
-        // Mouse controls for desktop
-        document.getElementById('gasBtn').addEventListener('mousedown', () => keys['ArrowUp'] = true);
-        document.getElementById('gasBtn').addEventListener('mouseup', () => keys['ArrowUp'] = false);
-        document.getElementById('brakeBtn').addEventListener('mousedown', () => keys['ArrowDown'] = true);
-        document.getElementById('brakeBtn').addEventListener('mouseup', () => keys['ArrowDown'] = false);
-        document.getElementById('leftBtn').addEventListener('mousedown', () => keys['ArrowLeft'] = true);
-        document.getElementById('leftBtn').addEventListener('mouseup', () => keys['ArrowLeft'] = false);
-        document.getElementById('rightBtn').addEventListener('mousedown', () => keys['ArrowRight'] = true);
-        document.getElementById('rightBtn').addEventListener('mouseup', () => keys['ArrowRight'] = false);
+        // Initialize mobile controls
+        setupMobileControls();
         
         // Update physics
         function update(deltaTime) {

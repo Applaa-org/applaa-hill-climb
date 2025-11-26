@@ -24,6 +24,9 @@ func _ready():
 	# Initialize terrain
 	generate_initial_terrain()
 	
+	# Connect HUD to player
+	hud.set_player(player)
+	
 	# Connect player signals
 	player.connect("tree_exiting", _on_player_crashed)
 	
